@@ -24,6 +24,12 @@ func (m *Movies) FindAllMovies() ([]Movies, error) {
 	return result, err
 }
 
+func (m *Movies) FindMovieById(id string) (Movies, error) {
+	var result Movies
+	err := FindOne(db, collection, bson.M{"_id": bson.ObjectIdHex(id)}, nil, &result)
+	return result, err
+}
+
 func (m *Movies) UpdateMovie(movie Movies) error {
 	return Update(db, collection, bson.M{"_id": movie.Id}, movie)
 }

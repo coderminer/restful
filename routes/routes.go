@@ -21,7 +21,7 @@ func init() {
 	register("GET", "/movies/{id}", controllers.FindMovie, nil)
 	register("POST", "/movies", controllers.CreateMovie, nil)
 	register("PUT", "/movies", controllers.UpdateMovie, nil)
-	register("DELETE", "/movies", controllers.DeleteMovie, nil)
+	register("DELETE", "/movies/{id}", controllers.DeleteMovie, nil)
 }
 
 func NewRouter() *mux.Router {
