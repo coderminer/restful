@@ -1,6 +1,10 @@
-### Build RESTful API with Go and MongoDB
+### 使用Golang和MongoDB构建 RESTful API
 
 记录一下创建 **RESTful API**使用 `Go`开发语言和 `MongoDB`后台数据库  
+
+[完整代码 Github](https://github.com/coderminer/restful)  
+
+![](http://7xplrz.com1.z0.glb.clouddn.com//corderminer/website/golang_restful_api.png)
 
 #### 安装依赖  
 
@@ -233,3 +237,135 @@ func Remove(db, collection string, query interface{}) error {
 ```
 
 * 业务逻辑层  `models/movies.go`
+
+```
+package models
+
+import "github.com/globalsign/mgo/bson"
+
+type Movies struct {
+	Id          bson.ObjectId `bson:"_id" json:"id"`
+	Name        string        `bson:"name" json:"name"`
+	CoverImage  string        `bson:"cover_image" json:"cover_image"`
+	Description string        `bson:"description" json:"description"`
+}
+
+const (
+	db         = "Movies"
+	collection = "MovieModel"
+)
+
+func (m *Movies) InsertMovie(movie Movies) error {
+	return Insert(db, collection, movie)
+}
+
+func (m *Movies) FindAllMovies() ([]Movies, error) {
+	var result []Movies
+	err := FindAll(db, collection, nil, nil, &result)
+	return result, err
+}
+
+func (m *Movies) FindMovieById(id string) (Movies, error) {
+	var result Movies
+	err := FindOne(db, collection, bson.M{"_id": bson.ObjectIdHex(id)}, nil, &result)
+	return result, err
+}
+
+func (m *Movies) UpdateMovie(movie Movies) error {
+	return Update(db, collection, bson.M{"_id": movie.Id}, movie)
+}
+
+func (m *Movies) RemoveMovie(id string) error {
+	return Remove(db, collection, bson.M{"_id": bson.ObjectIdHex(id)})
+}
+
+```
+
+#### 控制器逻辑  
+
+* CreateMovie
+
+```
+func CreateMovie(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var movie models.Movies
+	if err := json.NewDecoder(r.Body).Decode(&movie); err != nil {
+		responseWithJson(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	movie.Id = bson.NewObjectId()
+	if err := dao.InsertMovie(movie); err != nil {
+		responseWithJson(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	responseWithJson(w, http.StatusCreated, movie)
+}
+```
+
+使用 `Postman` 或 `curl`进行测试
+
+* AllMovies
+
+```
+func AllMovies(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var movies []models.Movies
+	movies, err := dao.FindAllMovies()
+	if err != nil {
+		responseWithJson(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	responseWithJson(w, http.StatusOK, movies)
+
+}
+```
+
+* FindMovie
+
+```
+func FindMovie(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	result, err := dao.FindMovieById(id)
+	if err != nil {
+		responseWithJson(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	responseWithJson(w, http.StatusOK, result)
+}
+```
+
+> http://127.0.0.1:8080/movies/5b45ef3a9d5e3e197c15e774  
+
+* UpdateMovie
+
+```
+func UpdateMovie(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var params models.Movies
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		responseWithJson(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	if err := dao.UpdateMovie(params); err != nil {
+		responseWithJson(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	responseWithJson(w, http.StatusOK, map[string]string{"result": "success"})
+}
+```
+
+* DeleteMovie
+
+```
+func DeleteMovie(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if err := dao.RemoveMovie(id); err != nil {
+		responseWithJson(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	responseWithJson(w, http.StatusOK, map[string]string{"result": "success"})
+}
+```
