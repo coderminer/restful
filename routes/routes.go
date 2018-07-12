@@ -8,20 +8,19 @@ import (
 )
 
 type Route struct {
-	Method     string
-	Pattern    string
-	Handler    http.HandlerFunc
-	Middleware mux.MiddlewareFunc
+	Method  string
+	Pattern string
+	Handler http.HandlerFunc
 }
 
 var routes []Route
 
 func init() {
-	register("GET", "/movies", controllers.AllMovies, nil)
-	register("GET", "/movies/{id}", controllers.FindMovie, nil)
-	register("POST", "/movies", controllers.CreateMovie, nil)
-	register("PUT", "/movies", controllers.UpdateMovie, nil)
-	register("DELETE", "/movies/{id}", controllers.DeleteMovie, nil)
+	register("GET", "/movies", controllers.AllMovies)
+	register("GET", "/movies/{id}", controllers.FindMovie)
+	register("POST", "/movies", controllers.CreateMovie)
+	register("PUT", "/movies", controllers.UpdateMovie)
+	register("DELETE", "/movies/{id}", controllers.DeleteMovie)
 }
 
 func NewRouter() *mux.Router {
@@ -30,13 +29,10 @@ func NewRouter() *mux.Router {
 		r.Methods(route.Method).
 			Path(route.Pattern).
 			Handler(route.Handler)
-		if route.Middleware != nil {
-			r.Use(route.Middleware)
-		}
 	}
 	return r
 }
 
-func register(method, pattern string, handler http.HandlerFunc, middleware mux.MiddlewareFunc) {
-	routes = append(routes, Route{method, pattern, handler, middleware})
+func register(method, pattern string, handler http.HandlerFunc) {
+	routes = append(routes, Route{method, pattern, handler})
 }
