@@ -41,6 +41,13 @@ func Insert(db, collection string, docs ...interface{}) error {
 	return c.Insert(docs...)
 }
 
+func IsExist(db, collection string, query interface{}) bool {
+	ms, c := connect(db, collection)
+	defer ms.Close()
+	count, _ := c.Find(query).Count()
+	return count > 0
+}
+
 func FindOne(db, collection string, query, selector, result interface{}) error {
 	ms, c := connect(db, collection)
 	defer ms.Close()

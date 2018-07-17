@@ -3,36 +3,45 @@ package routes
 import (
 	"net/http"
 
+	"github.com/coderminer/restful/auth"
 	"github.com/coderminer/restful/controllers"
 	"github.com/gorilla/mux"
 )
 
 type Route struct {
-	Method  string
-	Pattern string
-	Handler http.HandlerFunc
+	Method     string
+	Pattern    string
+	Handler    http.HandlerFunc
+	Middleware mux.MiddlewareFunc
 }
 
 var routes []Route
 
 func init() {
-	register("GET", "/movies", controllers.AllMovies)
-	register("GET", "/movies/{id}", controllers.FindMovie)
-	register("POST", "/movies", controllers.CreateMovie)
-	register("PUT", "/movies", controllers.UpdateMovie)
-	register("DELETE", "/movies/{id}", controllers.DeleteMovie)
+	register("GET", "/movies", controllers.AllMovies, auth.TokenMiddleware)
+	register("GET", "/movies/{id}", controllers.FindMovie, nil)
+	register("POST", "/movies", controllers.CreateMovie, nil)
+	register("PUT", "/movies", controllers.UpdateMovie, nil)
+	register("DELETE", "/movies/{id}", controllers.DeleteMovie, nil)
+
+	register("POST", "/user/register", controllers.Register, nil)
+	register("POST", "/user/login", controllers.Login, nil)
 }
 
 func NewRouter() *mux.Router {
-	r := mux.NewRouter()
+	router := mux.NewRouter()
 	for _, route := range routes {
-		r.Methods(route.Method).
-			Path(route.Pattern).
-			Handler(route.Handler)
+		r := router.Methods(route.Method).
+			Path(route.Pattern)
+		if route.Middleware != nil {
+			r.Handler(route.Middleware(route.Handler))
+		} else {
+			r.Handler(route.Handler)
+		}
 	}
-	return r
+	return router
 }
 
-func register(method, pattern string, handler http.HandlerFunc) {
-	routes = append(routes, Route{method, pattern, handler})
+func register(method, pattern string, handler http.HandlerFunc, middleware mux.MiddlewareFunc) {
+	routes = append(routes, Route{method, pattern, handler, middleware})
 }
