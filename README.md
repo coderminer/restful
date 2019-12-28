@@ -79,7 +79,7 @@ func FindMovie(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "not implemented !")
 }
 
-func CreateMovie(w http.ResponseWriter, t *http.Request) {
+func CreateMovie(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "not implemented !")
 }
 
